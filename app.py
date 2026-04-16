@@ -22,7 +22,11 @@ import datetime
 print("✅ feedparser ready for rolling Python & AI news")
 
 # ====================== CONFIG ======================
-st.set_page_config(page_title="Python Learning Chatbot", page_icon="🐍", layout="wide")
+st.set_page_config(
+    page_title="Python Learning Chatbot",
+    page_icon="🐍",
+    layout="wide"
+)
 
 # File names
 USERS_FILE = "users.json"
@@ -54,6 +58,27 @@ try:
 except Exception as e:
     print(f"❌ Connection failed: {e}")
     print("   Falling back to rule-based chat (basic_chat_response).")
+
+
+# ====================== LOAD DATA ======================
+@st.cache_data
+def load_users():
+    if os.path.exists(USERS_FILE):
+        with open(USERS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+@st.cache_data
+def load_user_data():
+    if os.path.exists(USER_DATA_FILE):
+        with open(USER_DATA_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+def save_user_data(data):
+    with open(USER_DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
 
 # Pre-populated users
 PRESET_USERS = {
@@ -116,16 +141,6 @@ PRESET_USERS = {
     }
 }
 
-# General encouragement msgs
-ENCOURAGEMENT_POOL = [
-    "Great effort! Keep going — practice makes progress.",
-    "Nice work! Try another quiz to reinforce what you've learned.",
-    "You're improving — small steps add up to big skills.",
-    "Don't worry about mistakes; they're how you learn.",
-    "Consistent practice will make concepts feel natural.",
-    "Coding is a superpower, and you're gaining it one step at a time! 💪",
-    "Remember, even the best programmers started exactly where you are today. 🌈"
-        ]
 
 # Utility functions to handle JSON files
 def ensure_files_exist():
@@ -298,94 +313,70 @@ def basic_chat_response(message):
     return ("I can help with Python concepts like functions, classes, lists, dicts, sets, lambdas. "
             "Try asking about a specific topic (e.g., 'How do I use a dictionary?').")
 
-# Encouragement logic
+# ====================== ENCOURAGEMENT ======================
 def generate_encouragement(username, users, user_data=None):
-    # 1. date input
     if user_data is None:
         user_data = load_user_data()
 
     messages = []
     is_teacher = username.startswith("Spvr")
 
-    # --- 1: login time ---
+    # Login gap message
     last_login_str = users.get(username, {}).get("last_login")
     if last_login_str:
         try:
             last_login = datetime.datetime.fromisoformat(last_login_str.replace("Z", "+00:00"))
-            now = datetime.datetime.now(datetime.UTC)
-            days_since = (now - last_login).days
+            days_since = (datetime.datetime.now(datetime.UTC) - last_login).days
 
             if days_since == 0:
-                msg = f"🔥 Welcome back today, {username}! Great to see you continuing your Python journey!"
+                msg = f"🔥 Welcome back today, {username}!"
             elif days_since == 1:
-                msg = f"🔥 Welcome back, {username}! You're building excellent daily momentum. 💪"
+                msg = f"🔥 Welcome back, {username}! Daily momentum! 💪"
             elif days_since <= 3:
-                msg = f"👏 Great to see you again so soon, {username}! Consistency really pays off."
+                msg = f"👏 Great to see you again so soon, {username}!"
             elif days_since <= 7:
-                msg = f"❤️ Welcome back, {username}! Let's pick up right where you left off."
+                msg = f"❤️ Welcome back, {username}! Let's continue where you left off."
             else:
-                msg = f"🌟 Welcome back, {username}! Let's strengthen your skills. Let's go! 🚀"
+                msg = f"🌟 Welcome back, {username}! It's been {days_since} days. Let's go! 🚀"
             messages.append(msg)
-        except Exception:
-            messages.append("🌟 Welcome back! Let's continue your Python learning journey.")
+        except:
+            messages.append("🌟 Welcome back!")
     else:
-        messages.append("🌟 Welcome! Let's build strong Python skills together.")
+        messages.append("🌟 Welcome to your Python learning journey!")
 
-    # --- 2: user vs teacher ---
+    # Role-specific
     if is_teacher:
-        # Teacher-specific
-        login_count = users.get(username, {}).get('login_count', 0)
         teacher_msgs = [
-            "Thank you for your hard work, Teacher! Your dedication is truly inspiring. ☕",
-            "Teaching is challenging yet rewarding. Remember to take care of yourself! 🌟",
-            f"You have logged in {login_count} times. Your students are fortunate to have you! 🍎",
-            "Thank you for continuously improving the quiz and learning materials! 📝"
+            "Thank you for your hard work, Teacher! Your dedication is inspiring. ☕",
+            "Teaching is challenging. Remember to take care of yourself! 🌟",
+            f"You have logged in {users.get(username, {}).get('login_count', 0)} times. Thank you! 🍎"
         ]
         messages.append(random.choice(teacher_msgs))
-
     else:
-        # Student-specific for user
+        # Student quiz feedback
         ud = user_data.get(username, {})
         quizzes = ud.get("quizzes", [])
-
-        # A. quiz result
         if quizzes:
             last_score = quizzes[-1].get("score_percent")
             if last_score is not None:
                 if last_score >= 80:
-                    messages.append(f"Excellent! You scored {last_score}% in your last quiz. 🏆")
+                    messages.append(f"Excellent! You scored {last_score}%! 🏆")
                 elif last_score >= 60:
-                    messages.append(f"Good job! {last_score}% is a solid score. 🚀")
+                    messages.append(f"Good job! {last_score}% is solid. 🚀")
                 else:
-                    messages.append(f"Keep going! {last_score}% is just a starting point. 💪")
+                    messages.append(f"Keep going! {last_score}% shows effort. 💪")
 
-        # B. login time
-        login_count = users.get(username, {}).get("login_count", 0)
-        if login_count >= 3:
-            login_variants = [
-                f"Impressive dedication! You've logged in {login_count} times. ✨",
-                f"Welcome back for the {login_count}th time! 🚀",
-                f"Seeing you {login_count} times shows real commitment. 🔥"
-            ]
-            messages.append(random.choice(login_variants))
-
-        # C. chat time
-        chat_count = len(ud.get("chats", []))
-        if chat_count >= 1:
-            chat_variants = [
-                f"You've had {chat_count} chat interactions. Curiosity is your strength! 🗣️",
-                f"Love the {chat_count} questions you've asked! 💡",
-                f"With {chat_count} chats, you're thinking deeply about Python! 🌟"
-            ]
-            messages.append(random.choice(chat_variants))
-
-    # --- 3: gerenal ---
-    if 'ENCOURAGEMENT_POOL' in globals():
-        messages.append(random.choice(ENCOURAGEMENT_POOL))
-
-    # --- return if-else  ---
-    if not messages:
-        return "Keep going! You're doing great. 🌟"
+    # General
+    ENCOURAGEMENT_POOL = [
+        "Great effort! Keep going — practice makes progress.",
+        "You're improving — small steps add up to big skills.",
+        "Don't worry about mistakes; they're how you learn.",
+        "Consistent practice will make concepts feel natural."
+        "Nice work! Try another quiz to reinforce what you've learned.",
+        "Coding is a superpower, and you're gaining it one step at a time! 💪",
+        "Remember, even the best programmers started exactly where you are today. 🌈"
+    ]
+    messages.append(random.choice(ENCOURAGEMENT_POOL))
 
     return "\n\n".join(messages)
 
@@ -2064,59 +2055,66 @@ def login_flow():
                     print("Invalid choice. Please enter 1 or 2.")
                     continue  # Stay in password loop
 
+# ====================== MAIN APP ======================
 def main():
     st.title("🐍 Python Learning Chatbot")
-    st.markdown("### Interactive Python Learning Platform")
+    st.markdown("### Interactive Python Tutor for PolyU SPEED Students")
 
-    # Session state for login
+    # Login
     if "logged_in" not in st.session_state:
         st.session_state.logged_in = False
 
     if not st.session_state.logged_in:
-        col1, col2 = st.columns([1, 2])
-        with col1:
-            username = st.text_input("Username")
-            password = st.text_input("Password", type="password")
-            if st.button("Login"):
-                # Add your login logic here (load_users, check password, etc.)
-                # For now, placeholder:
-                if username and password:
-                    st.session_state.logged_in = True
-                    st.session_state.username = username
-                    st.rerun()
+        st.subheader("Login")
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+
+        if st.button("Login"):
+            users = load_users()
+            if username in users and password == users[username].get("password"):
+                st.session_state.logged_in = True
+                st.session_state.username = username
+                st.success(f"Welcome back, {username}!")
+                st.rerun()
+            else:
+                st.error("Invalid credentials")
     else:
         username = st.session_state.username
+        users = load_users()
+
         st.sidebar.success(f"Logged in as: **{username}**")
 
-        menu = st.sidebar.radio("Go to", [
-            "Home", "Quiz Me", "Encourage Me", 
-            "Chat with Me", "Learning Materials", 
-            "Progress Dashboard", "Logout"
+        menu = st.sidebar.radio("Menu", [
+            "🏠 Home",
+            "🧐 Quiz Me",
+            "🫶 Encourage Me",
+            "🤖 Chat with Me",
+            "📚 Learning Materials",
+            "📊 Progress",
+            "🚪 Logout"
         ])
 
-        if menu == "Home":
-            msg = generate_encouragement(username, load_users())
+        if menu == "🏠 Home":
+            msg = generate_encouragement(username, users)
             st.info(msg)
 
-        elif menu == "Quiz Me":
-            # Call your run_quiz function (you'll need to adapt inputs to st widgets)
-            st.info("Quiz section — adapt run_quiz here")
+        elif menu == "🧐 Quiz Me":
+            st.warning("Quiz Me is not fully converted to Streamlit yet. This needs input widgets.")
 
-        elif menu == "Encourage Me":
-            msg = generate_encouragement(username, load_users())
+        elif menu == "🫶 Encourage Me":
+            msg = generate_encouragement(username, users)
             st.success(msg)
 
-        elif menu == "Chat with Me":
-            # Your AI chat logic (use st.chat_input)
-            st.info("AI Chat section")
+        elif menu == "🤖 Chat with Me":
+            st.info("Chat with Me section - AI chat needs st.chat_input adaptation.")
 
-        elif menu == "Learning Materials":
-            show_learning_materials()
+        elif menu == "📚 Learning Materials":
+            st.info("Learning Materials - rich lessons can be shown here.")
 
-        elif menu == "Progress Dashboard":
-            show_progress_dashboard(username)
+        elif menu == "📊 Progress":
+            st.info("Progress Dashboard - to be implemented.")
 
-        elif menu == "Logout":
+        elif menu == "🚪 Logout":
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
             st.rerun()
