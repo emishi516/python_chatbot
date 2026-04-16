@@ -1,3 +1,4 @@
+import streamlit as st
 import json
 import os
 import random
@@ -19,6 +20,9 @@ subprocess.run(["pip", "install", "-q", "feedparser"], capture_output=True)
 import feedparser
 import datetime
 print("✅ feedparser ready for rolling Python & AI news")
+
+# ====================== CONFIG ======================
+st.set_page_config(page_title="Python Learning Chatbot", page_icon="🐍", layout="wide")
 
 # File names
 USERS_FILE = "users.json"
@@ -2142,13 +2146,61 @@ def login_flow():
                     continue  # Stay in password loop
 
 def main():
-    print("Welcome to the Python Learning Chatbot.")
-    while True:
-        user = login_flow()
-        if user is None:
-            print("Goodbye.")
-            break
-        main_menu(user)
+    st.title("🐍 Python Learning Chatbot")
+    st.markdown("### Interactive Python Learning Platform")
+
+    # Session state for login
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
+
+    if not st.session_state.logged_in:
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            if st.button("Login"):
+                # Add your login logic here (load_users, check password, etc.)
+                # For now, placeholder:
+                if username and password:
+                    st.session_state.logged_in = True
+                    st.session_state.username = username
+                    st.rerun()
+    else:
+        username = st.session_state.username
+        st.sidebar.success(f"Logged in as: **{username}**")
+
+        menu = st.sidebar.radio("Go to", [
+            "Home", "Quiz Me", "Encourage Me", 
+            "Chat with Me", "Learning Materials", 
+            "Progress Dashboard", "Logout"
+        ])
+
+        if menu == "Home":
+            msg = generate_encouragement(username, load_users())
+            st.info(msg)
+
+        elif menu == "Quiz Me":
+            # Call your run_quiz function (you'll need to adapt inputs to st widgets)
+            st.info("Quiz section — adapt run_quiz here")
+
+        elif menu == "Encourage Me":
+            msg = generate_encouragement(username, load_users())
+            st.success(msg)
+
+        elif menu == "Chat with Me":
+            # Your AI chat logic (use st.chat_input)
+            st.info("AI Chat section")
+
+        elif menu == "Learning Materials":
+            show_learning_materials()
+
+        elif menu == "Progress Dashboard":
+            show_progress_dashboard(username)
+
+        elif menu == "Logout":
+            for key in list(st.session_state.keys()):
+                del st.session_state[key]
+            st.rerun()
 
 if __name__ == "__main__":
     main()
