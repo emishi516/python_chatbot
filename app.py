@@ -271,62 +271,7 @@ def chat_is_allowed(message):
         if kw in msg:
             return True
     return False
-
-# def fetch_rolling_news():
-#     """Fetch latest Python and AI news from RSS feeds."""
-#     print("\n" + "="*60)
-#     print("📰 ROLLING NEWS: Python & AI (Latest Headlines)")
-#     print("="*60)
-
-#     news_sources = [
-#         {
-#             "name": "Python Official Blog",
-#             "url": "https://blog.python.org/feeds/posts/default",
-#             "limit": 3
-#         },
-#         {
-#             "name": "AI / Tech News (via The New Stack / InfoWorld)",
-#             "url": "https://thenewstack.io/feed/",   # Good mix of Python + AI
-#             "limit": 3
-#         }
-#     ]
-
-#     found_any = False
-#     for source in news_sources:
-#         try:
-#             feed = feedparser.parse(source["url"])
-#             if not feed.entries:
-#                 continue
-
-#             print(f"\n🔹 {source['name']}:")
-#             for i, entry in enumerate(feed.entries[:source["limit"]], 1):
-#                 title = entry.title
-#                 link = entry.link
-#                 # Get published date if available
-#                 published = ""
-#                 if hasattr(entry, 'published_parsed') and entry.published_parsed:
-#                     dt = datetime.datetime(*entry.published_parsed[:6])
-#                     published = f" ({dt.strftime('%b %d, %Y')})"
-#                 elif hasattr(entry, 'updated_parsed') and entry.updated_parsed:
-#                     dt = datetime.datetime(*entry.updated_parsed[:6])
-#                     published = f" ({dt.strftime('%b %d, %Y')})"
-
-#                 print(f"  {i}. {title}{published}")
-#                 print(f"     → {link}")
-#                 found_any = True
-#         except Exception as e:
-#             print(f"  (Could not load {source['name']})")
-
-#     if not found_any:
-#         # Fallback static/recent headlines (update manually or keep as backup)
-#         print("\n📌 Recent Highlights (as of April 2026):")
-#         print("  • Python 3.15.0a8, 3.14.4 and 3.13.13 released!")
-#         print("  • OpenAI acquires Astral (Python developer tools)")
-#         print("  • Meta introduces Muse Spark AI model")
-#         print("  • New technique makes AI models leaner during training (MIT)")
-
-#     print("\n💡 Tip: These headlines are fetched live on login. Stay curious!")
-#     print("="*60)
+    
 
 def basic_chat_response(message):
     m = message.lower()
@@ -444,32 +389,6 @@ def generate_encouragement(username, users, user_data=None):
 
     return "\n\n".join(messages)
 
-
-# def show_login_gap_encouragement(username, users):
-#     """Show personalized message based on days since last login"""
-#     last_login_str = users[username].get("last_login")
-#     if not last_login_str:
-#         print("🌟 Welcome to your learning journey! Let's build strong Python skills together.")
-#         return
-
-#     try:
-#         last_login = datetime.datetime.fromisoformat(last_login_str.replace("Z", "+00:00"))
-#         now = datetime.datetime.now(datetime.UTC)
-#         days_since = (now - last_login).days
-
-#         if days_since < 2:
-#             msg = f"🔥 Welcome back so soon, {username}! You're building excellent momentum. Keep it up!"
-#         elif days_since <= 3:
-#             msg = f"👏 Great to see you again, {username}! Consistency really pays off in programming."
-#         elif days_since <= 7:
-#             msg = f"❤️ Welcome back, {username}! It's been a little while — let's pick up right where you left off."
-#         else:
-#             msg = f"🌟 Welcome back, {username}! It's been over a week. You've got this — let's get back into Python!"
-
-#         print(f"\n{msg}")
-
-#     except Exception:
-#         print("\n🌟 Welcome back! Let's continue your Python learning journey.")
 
 QuizMe_Idx_Asked = []
 QuizMe_Idx_Corrected = []
